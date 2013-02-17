@@ -5,10 +5,18 @@ Mdig
 Copyright (C) Zhou Changrong
 """
 
-import os, sys, json, pycurl, StringIO, types, re, getopt, time
+import os, sys, pycurl, StringIO, types, re, getopt, time, platform
+
 version = "0.1.0"
 
-class httprequest():
+# python less 2.6.0
+# json module is simplejson
+if platform.python_version() < '2.6.0':
+	import simplejson as json
+else:
+	import json
+
+class httprequest:
 	def __init__(self, **args):
 		self.c = None
 		self.proxy_host = None
@@ -147,7 +155,7 @@ class httprequest():
 		c = self.c
 		if c != None:
 			c.close()
-class mhttprequest():
+class mhttprequest:
 	cs = {}
 	def __init__(self, line_out = None):
 		self.line_out = line_out
@@ -358,7 +366,10 @@ def main():
 	if groups[0] is not None or groups[2] is not None or groups[4] is not None:
 		get_uri = True
 	domain_name = groups[1]
-	port = port if groups[3] is None else int(groups[3])
+	# python 2.4 not support
+	#port = port if groups[3] is None else int(groups[3])
+	if groups[3] is not None:
+		port = int(groups[3])
 	data = 'query_type=A&domain_name=%s&city=6,7,8,1,2,3,4,5,15,27,28,29,30,31,22,23,24,25,26,16,17,18,9,10,11,12,13,14,19,20,21,32,33,34,36,37&isp=1,2,3,5,8&rand=13739' %(domain_name)
 	i = 0
 	while i < 3:

@@ -1,11 +1,13 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 """\
 Mdig
 Copyright (C) Zhou Changrong
 """
 
 import os, sys, pycurl, StringIO, types, re, getopt, time, platform
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 version = "0.1.0"
 

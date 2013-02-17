@@ -263,6 +263,7 @@ class mhttprequest():
 				result['size_upload'] = c.getinfo(c.SIZE_UPLOAD)
 				self.line_out(result, other_data)
 				c.close()
+				self.cs[c] = None
 			for o in others:
 				c, code, msg = o
 				self.m.remove_handle(c)
@@ -282,6 +283,7 @@ class mhttprequest():
 				result['size_upload'] = c.getinfo(c.SIZE_UPLOAD)
 				self.line_out(result, other_data, code, msg)
 				c.close()
+				self.cs[c] = None
 			if num == 0:
 				break
 			ret = self.m.select(1.0)
@@ -437,6 +439,7 @@ def main():
 			print
 	if get_uri:
 		h.perform()
+	h.close()
 	
 main()
 	

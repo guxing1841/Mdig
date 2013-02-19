@@ -60,7 +60,7 @@ class httprequest:
 			elif key == 'userpwd':
 				self.userpwd = args['userpwd']
 			else:
-				raise TypeError, 'http_request() got an unexpected keyword argument \'%s\'' %(key)
+				raise TypeError, 'httprequest() got an unexpected keyword argument \'%s\'' %(key)
 		self.c = pycurl.Curl()
 	def request(self, url = None, **args):
 		c = self.c
@@ -106,7 +106,7 @@ class httprequest:
 			elif key == 'userpwd':
 				userpwd = args['userpwd']
 			else:
-				raise TypeError, 'http_request() got an unexpected keyword argument \'%s\'' %(key)
+				raise TypeError, 'request() got an unexpected keyword argument \'%s\'' %(key)
 		c.setopt(c.URL, url)
 		if proxy_host != None:
 			c.setopt(c.PROXY, proxy_host)
@@ -209,7 +209,7 @@ class mhttprequest:
 			elif key == 'other_data':
 				other_data = args['other_data']
 			else:
-				raise TypeError, 'http_request() got an unexpected keyword argument \'%s\'' %(key)
+				raise TypeError, 'add_request() got an unexpected keyword argument \'%s\'' %(key)
 		c.setopt(c.URL, url)
 		if proxy_host != None:
 			c.setopt(c.PROXY, proxy_host)
@@ -446,7 +446,7 @@ def main():
 			else:
 				if not view_name_out:
 					view_name_out = True
-					print r['view_name']
+					print "%s %s:" %(r['view_name'], r['from_ip_trans'])
 				print "IN %s %s"  %(r['type_trans'], r['result_trans'])
 		if not get_uri:
 			print

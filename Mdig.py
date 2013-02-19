@@ -372,7 +372,27 @@ def main():
 	#port = port if groups[3] is None else int(groups[3])
 	if groups[3] is not None:
 		port = int(groups[3])
-	data = 'query_type=A&domain_name=%s&city=6,7,8,1,2,3,4,5,15,27,28,29,30,31,22,23,24,25,26,16,17,18,9,10,11,12,13,14,19,20,21,32,33,34,36,37&isp=1,2,3,5,8&rand=13739' %(domain_name)
+	try:
+		h = httprequest()
+		result = h.request('http://tools.fastweb.com.cn/index.php/Index/Mdig',
+				method = 'GET')
+		h.close()
+	except pycurl.error, e:
+		print >>sys.stderr, "%s" %e
+		os._exit(1)
+	m = re.search(r'PHPSESSID=(.+?);', result['header'], re.S)
+	if not m:
+		print >>sys.stderr, "没有取到PHPSESSID"
+		os._exit(1)
+	phpsessid = m.groups()[0]
+	
+
+	m = re.search(r'name="sid" value="(.+?)"', result['body'], re.S)
+	if not m:
+		print >>sys.stderr, "没有取到sid"
+		os._exit(1)
+	sid = m.groups()[0]
+	data = 'query_type=A&domain_name=%s&city=6,7,8,1,2,3,4,5,15,27,28,29,30,31,22,23,24,25,26,16,17,18,9,10,11,12,13,14,19,20,21,32,33,34,36,37&isp=1,2,3,5,8&rand=13739&sid=%s' %(domain_name, sid)
 	i = 0
 	while i < 3:
 		if i>0:
@@ -381,6 +401,7 @@ def main():
 			h = httprequest()
 			result = h.request('http://tools.fastweb.com.cn/index.php/Index/sendMdig',
 					method = 'POST',
+					headers = ["Cookie: PHPSESSID=%s" %phpsessid],
 					post_data = data)
 			h.close()
 		except pycurl.error, e:
@@ -404,6 +425,7 @@ def main():
 			h = httprequest()
 			result = h.request('http://tools.fastweb.com.cn/index.php/Index/getMdigResultOne',
 					method = 'POST',
+					headers = ["Cookie: PHPSESSID=%s" %phpsessid],
 					post_data = data)
 			h.close()
 		except pycurl.error, e:

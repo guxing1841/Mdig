@@ -5,9 +5,9 @@ Mdig
 Copyright (C) Zhou Changrong
 """
 
-import os, sys, pycurl, StringIO, types, re, getopt, time, platform
+import os, sys, pycurl, StringIO, types, re, getopt, time, platform, locale
 reload(sys)
-sys.setdefaultencoding('utf-8')
+sys.setdefaultencoding("UTF8")
 
 version = "0.1.0"
 
@@ -158,7 +158,7 @@ class httprequest:
 		if c != None:
 			c.close()
 class mhttprequest:
-	cs = {}
+	handles = {}
 	def __init__(self, line_out = None):
 		self.line_out = line_out
 		self.m = pycurl.CurlMulti()
@@ -242,21 +242,28 @@ class mhttprequest:
 			c.setopt(c.TIMEOUT, timeout)
 		if connect_timeout > 0:
 			c.setopt(c.CONNECTTIMEOUT, connect_timeout)
-		self.m.add_handle(c)
-		self.cs[c]=[b, h, other_data]
+		self.handles[c]=[b, h, other_data]
 		return None
-	def perform(self):
-		start = time.time()
+	def perform(self, max_connections = 0):
+		handle_list = self.handles.keys()
+		n = len(handle_list)
+		current_connections = 0
+		i = 0
 		while True:
+			while i<n and (current_connections<max_connections or max_connections == 0):
+				self.m.add_handle(handle_list[i])
+				self.handles[handle_list[i]].append(time.time())
+				i+=1
+				current_connections += 1
 			ret, num = self.m.perform()
 			if ret == pycurl.E_CALL_MULTI_PERFORM:
 				continue
 			ret, handlers, others = self.m.info_read()
 			now = time.time()
-			total_time = now - start
 			for c in handlers:
 				self.m.remove_handle(c)
-				b, h, other_data = self.cs[c]
+				b, h, other_data, start = self.handles[c]
+				total_time = now - start
 				result = {}
 				result['code'] = c.getinfo(c.HTTP_CODE)
 				result['body'] = b.getvalue()
@@ -273,11 +280,14 @@ class mhttprequest:
 				result['size_upload'] = c.getinfo(c.SIZE_UPLOAD)
 				self.line_out(result, other_data)
 				c.close()
-				self.cs[c] = None
+				del(self.handles[c])
+				current_connections -= 1
 			for o in others:
 				c, code, msg = o
 				self.m.remove_handle(c)
-				b, h, other_data = self.cs[c]
+				b, h, other_data, start = self.handles[c]
+				total_time = now - start
+
 				result = {}
 				result['code'] = c.getinfo(c.HTTP_CODE)
 				result['body'] = b.getvalue()
@@ -293,12 +303,14 @@ class mhttprequest:
 				result['size_upload'] = c.getinfo(c.SIZE_UPLOAD)
 				self.line_out(result, other_data, code, msg)
 				c.close()
-				self.cs[c] = None
-			if num == 0:
+				del(self.handles[c])
+				current_connections -= 1
+			#print num, i, n, current_connections, max_connections
+			if num == 0 and i == n:
 				break
 			ret = self.m.select(1.0)
 	def close(self):
-		for c in self.cs:
+		for c in self.handles.keys():
 			if c != None:
 				c.close()
 		m = self.m
@@ -312,6 +324,7 @@ def usage():
 	print " -c/--connect-timeout=<int>  connect timeout"
 	print " -m/--method=<string>        Method"
 	print " -t/--timeout=<int>          timeout"
+	print " -n/--max-connections=<int>  max connections"
 	print " -h/--help          Display this page and exit"
 	print " -v/--version       Display version and exit"
 
@@ -324,8 +337,9 @@ def main():
 	method = 'GET'
 	timeout = 0
 	connect_timeout = 0
+	max_connections = 10
 	try:
-		opts,args = getopt.gnu_getopt(sys.argv[1:], "c:t:m:hv", ["connect-timeout=", "timeout=", "method=", "help", "version"])
+		opts,args = getopt.gnu_getopt(sys.argv[1:], "c:n:t:m:hv", ["connect-timeout=", "max-connections=", "timeout=", "method=", "help", "version"])
 		for opt,arg in opts:
 			if opt in ("-m", "--method"):
 				method = arg
@@ -342,6 +356,13 @@ def main():
 				except ValueError, e:
 					print >>sys.stderr, "option '%s': %s" %(opt, e)
 					os._exit(1)
+			elif opt in ("-n", "--max-connections"):
+				try:
+					max_connections = int(arg)
+				except ValueError, e:
+					print >>sys.stderr, "option '%s': %s" %(opt, e)
+					os._exit(1)
+
 			elif opt in ("-h", "--help"):
 				usage()
 				os._exit(0)
@@ -396,7 +417,7 @@ def main():
 	i = 0
 	while i < 3:
 		if i>0:
-			print >>sys.stderr, "正在重试1..."
+			print >>sys.stderr, "正在重试1...".decode(LC)
 		try:
 			h = httprequest()
 			result = h.request('http://tools.fastweb.com.cn/index.php/Index/sendMdig',
@@ -408,10 +429,13 @@ def main():
 			print >>sys.stderr, "%s" %e
 			os._exit(1)
 
-		s = json.loads(result['body'])
+		try:
+			s = json.loads(unicode(result['body'], 'UTF-8'))
+		except:
+			print >>sys.stderr, "无效的: %s" %(result['body'])
+			continue
 		if not s['status'] or type(s['data']) is not types.DictType:
 			print >>sys.stderr, "没有取到结果1"
-			os._exit(1)
 		else:
 			break
 		i+=1
@@ -431,8 +455,11 @@ def main():
 		except pycurl.error, e:
 			print >>sys.stderr, "%s" %e
 			os._exit(1)
-
-		s = json.loads(result['body'])
+		try:
+			s = json.loads(result['body'])
+		except:
+			print >>sys.stderr, "无效的: %s" %(result['body'])
+			continue
 		if not s['status'] or type(s['data']) is not types.DictType:
 			print >>sys.stderr, "没有取到结果2"
 		else:
@@ -443,6 +470,7 @@ def main():
 	if get_uri:
 		print "zone                ip                  return_code    length         use_time            provider     errno  message"
 		print "====================================================================================================================="
+	del s['data']['result_id']
 	for view_id in s['data'].keys():
 		view_name_out = False
 		for r in s['data'][view_id]:
@@ -473,7 +501,7 @@ def main():
 		if not get_uri:
 			print
 	if get_uri:
-		h.perform()
+		h.perform(max_connections)
 	h.close()
 	
 main()

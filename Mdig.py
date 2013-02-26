@@ -318,18 +318,18 @@ class mhttprequest:
 			m.close()
 
 def usage():
-	print "Usage: %s [OPTIONS...] <uri|domain>" %(sys.argv[0])
+	print u"Usage: %s [OPTIONS...] <uri|domain>" %(sys.argv[0])
 	print
-	print "Options:"
-	print " -c/--connect-timeout=<int>  connect timeout"
-	print " -m/--method=<string>        Method"
-	print " -t/--timeout=<int>          timeout"
-	print " -n/--max-connections=<int>  max connections"
-	print " -h/--help          Display this page and exit"
-	print " -v/--version       Display version and exit"
+	print u"Options:"
+	print u" -c/--connect-timeout=<int>  connect timeout"
+	print u" -m/--method=<string>        Method"
+	print u" -t/--timeout=<int>          timeout"
+	print u" -n/--max-connections=<int>  max connections"
+	print u" -h/--help          Display this page and exit"
+	print u" -v/--version       Display version and exit"
 
 def line_out(result, other_data, code = 0, msg = None):
-	print ('%-14s %-19s %-14d %-14d %5.6f          %-14s %5d %s' %(other_data[0], other_data[1], result['code'], result['body_size'], result['total_time'], other_data[2], code, msg))
+	print (u'%-14s %-19s %-14d %-14d %5.6f          %-14s %5d %s' %(other_data[0], other_data[1], result['code'], result['body_size'], result['total_time'], other_data[2], code, msg))
 
 def main():
 	get_uri = False
@@ -367,23 +367,23 @@ def main():
 				usage()
 				os._exit(0)
 			elif opt in ("-v", "--version"):
-				print "version %s" %version
+				print u"version %s" %version
 				os._exit(0)
 	except getopt.GetoptError, e:
-		sys.stderr.write("Error: %s\n" %(e))
+		sys.stderr.write(u"Error: %s\n" %(e))
 		os._exit(1)
 	if len(args) > 1:
-		sys.stderr.write("Error: Too many arguments\n")
+		sys.stderr.write(u"Error: Too many arguments\n")
 		usage()
 		os._exit(1)
 	elif len(args) < 1:
-		sys.stderr.write("Error: Too few arguemnts\n")
+		sys.stderr.write(u"Error: Too few arguemnts\n")
 		usage()
 		os._exit(1) 
 	uri = args[0]
 	m = re.match(r'^(http://)?(.+?)(:(\d+))?(/.*)?$', uri)
 	if not m:
-		print >>sys.stderr, "无效参数"
+		print >>sys.stderr, u"无效参数"
 		os._exit(1)
 	groups = m.groups()
 	if groups[0] is not None or groups[2] is not None or groups[4] is not None:
@@ -399,25 +399,25 @@ def main():
 				method = 'GET')
 		h.close()
 	except pycurl.error, e:
-		print >>sys.stderr, "%s" %e
+		print >>sys.stderr, u"%s" %e
 		os._exit(1)
 	m = re.search(r'PHPSESSID=(.+?);', result['header'], re.S)
 	if not m:
-		print >>sys.stderr, "没有取到PHPSESSID"
+		print >>sys.stderr, u"没有取到PHPSESSID"
 		os._exit(1)
 	phpsessid = m.groups()[0]
 	
 
 	m = re.search(r'name="sid" value="(.+?)"', result['body'], re.S)
 	if not m:
-		print >>sys.stderr, "没有取到sid"
+		print >>sys.stderr, u"没有取到sid"
 		os._exit(1)
 	sid = m.groups()[0]
 	data = 'query_type=A&domain_name=%s&city=6,7,8,1,2,3,4,5,15,27,28,29,30,31,22,23,24,25,26,16,17,18,9,10,11,12,13,14,19,20,21,32,33,34,36,37&isp=1,2,3,5,8&rand=13739&sid=%s' %(domain_name, sid)
 	i = 0
 	while i < 3:
 		if i>0:
-			print >>sys.stderr, "正在重试1...".decode(LC)
+			print >>sys.stderr, u"正在重试1..."
 		try:
 			h = httprequest()
 			result = h.request('http://tools.fastweb.com.cn/index.php/Index/sendMdig',
@@ -432,10 +432,10 @@ def main():
 		try:
 			s = json.loads(unicode(result['body'], 'UTF-8'))
 		except:
-			print >>sys.stderr, "无效的: %s" %(result['body'])
+			print >>sys.stderr, u"无效的: %s" %(result['body'])
 			continue
 		if not s['status'] or type(s['data']) is not types.DictType:
-			print >>sys.stderr, "没有取到结果1"
+			print >>sys.stderr, u"没有取到结果1"
 		else:
 			break
 		i+=1
@@ -444,7 +444,7 @@ def main():
 	i = 0
 	while i < 3:
 		if i>0:
-			print >>sys.stderr, "正在重试2..."
+			print >>sys.stderr, u"正在重试2..."
 		try:
 			h = httprequest()
 			result = h.request('http://tools.fastweb.com.cn/index.php/Index/getMdigResultOne',
@@ -453,15 +453,15 @@ def main():
 					post_data = data)
 			h.close()
 		except pycurl.error, e:
-			print >>sys.stderr, "%s" %e
+			print >>sys.stderr, u"%s" %e
 			os._exit(1)
 		try:
 			s = json.loads(result['body'])
 		except:
-			print >>sys.stderr, "无效的: %s" %(result['body'])
+			print >>sys.stderr, u"无效的: %s" %(result['body'])
 			continue
 		if not s['status'] or type(s['data']) is not types.DictType:
-			print >>sys.stderr, "没有取到结果2"
+			print >>sys.stderr, u"没有取到结果2"
 		else:
 			break
 		i+=1
@@ -496,8 +496,8 @@ def main():
 			else:
 				if not view_name_out:
 					view_name_out = True
-					print "%s %s:" %(r['view_name'], r['from_ip_trans'])
-				print "IN %s %s"  %(r['type_trans'], r['result_trans'])
+					print u"%s %s:" %(r['view_name'], r['from_ip_trans'])
+				print u"IN %s %s"  %(r['type_trans'], r['result_trans'])
 		if not get_uri:
 			print
 	if get_uri:

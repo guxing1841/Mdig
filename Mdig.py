@@ -325,6 +325,7 @@ def usage():
 	print u" -m/--method=<string>        Method"
 	print u" -t/--timeout=<int>          timeout"
 	print u" -n/--max-connections=<int>  max connections"
+	print u" -H/--header=<string>        add header"
 	print u" -h/--help          Display this page and exit"
 	print u" -v/--version       Display version and exit"
 
@@ -338,8 +339,9 @@ def main():
 	timeout = 0
 	connect_timeout = 0
 	max_connections = 10
+	headers = []
 	try:
-		opts,args = getopt.gnu_getopt(sys.argv[1:], "c:n:t:m:hv", ["connect-timeout=", "max-connections=", "timeout=", "method=", "help", "version"])
+		opts,args = getopt.gnu_getopt(sys.argv[1:], "c:n:t:m:H:hv", ["connect-timeout=", "max-connections=", "timeout=", "method=", "header=", "help", "version"])
 		for opt,arg in opts:
 			if opt in ("-m", "--method"):
 				method = arg
@@ -362,7 +364,8 @@ def main():
 				except ValueError, e:
 					print >>sys.stderr, "option '%s': %s" %(opt, e)
 					os._exit(1)
-
+                        elif opt in ("-H", "--header"):
+				headers.append(arg)
 			elif opt in ("-h", "--help"):
 				usage()
 				os._exit(0)
@@ -432,7 +435,7 @@ def main():
 		try:
 			s = json.loads(unicode(result['body'], 'UTF-8'))
 		except:
-			print >>sys.stderr, u"无效的: %s" %(result['body'])
+			print >>sys.stderr, u"无效的: %s" %(result['body'][0:32])
 			continue
 		if not s['status'] or type(s['data']) is not types.DictType:
 			print >>sys.stderr, u"没有取到结果1"
@@ -458,7 +461,7 @@ def main():
 		try:
 			s = json.loads(result['body'])
 		except:
-			print >>sys.stderr, u"无效的: %s" %(result['body'])
+			print >>sys.stderr, u"无效的: %s" %(result['body'][0:32])
 			continue
 		if not s['status'] or type(s['data']) is not types.DictType:
 			print >>sys.stderr, u"没有取到结果2"
@@ -489,6 +492,7 @@ def main():
 						method = method,
 						timeout = timeout,
 						connect_timeout = connect_timeout,
+                                                headers = headers,
 						other_data = data)
 				except pycurl.error, e:
 					print >>sys.stderr, "%s" %e

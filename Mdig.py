@@ -203,7 +203,7 @@ class mhttprequest:
 			elif key == 'verbose':
 				verbose = args['verbose']
 			elif key == 'version':
-			a	version = args['version']
+				version = args['version']
 			elif key == 'userpwd':
 				userpwd = args['userpwd']
 			elif key == 'other_data':
